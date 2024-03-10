@@ -1,51 +1,6 @@
 [submodule "third_party/websocketpp"]
 	path = third_party/websocketpp
 	url = https://github.com/zaphoyd/websocketpp.git
-[submodule "third_party/asio"]
-	path = third_party/asio
-	url = https://github.com/boostorg/asio.git
-[submodule "third_party/thread"]
-	path = third_party/thread
-	url = https://github.com/boostorg/thread.git
-[submodule "third_party/config"]
-	path = third_party/config
-	url = https://github.com/boostorg/config.git
-[submodule "third_party/system"]
-	path = third_party/system
-	url = https://github.com/boostorg/system.git
-[submodule "third_party/assert"]
-	path = third_party/assert
-	url = https://github.com/boostorg/assert.git
-[submodule "third_party/core"]
-	path = third_party/core
-	url = https://github.com/boostorg/core.git
-[submodule "third_party/type_traits"]
-	path = third_party/type_traits
-	url = https://github.com/boostorg/type_traits.git
-[submodule "third_party/throw_exception"]
-	path = third_party/throw_exception
-	url = https://github.com/boostorg/throw_exception.git
-[submodule "third_party/align"]
-	path = third_party/align
-	url = https://github.com/boostorg/align.git
-[submodule "third_party/date_time"]
-	path = third_party/date_time
-	url = https://github.com/boostorg/date_time.git
-[submodule "third_party/smart_ptr"]
-	path = third_party/smart_ptr
-	url = https://github.com/boostorg/smart_ptr.git
-[submodule "third_party/utility"]
-	path = third_party/utility
-	url = https://github.com/boostorg/utility.git
-[submodule "third_party/static_assert"]
-	path = third_party/static_assert
-	url = https://github.com/boostorg/static_assert.git
-[submodule "third_party/numeric_conversion"]
-	path = third_party/numeric_conversion
-	url = https://github.com/boostorg/numeric_conversion.git
-[submodule "third_party/mpl"]
-	path = third_party/mpl
-	url = https://github.com/boostorg/mpl.git
-[submodule "third_party/preprocessor"]
-	path = third_party/preprocessor
-	url = https://github.com/boostorg/preprocessor.git
+[submodule "third_party/boost"]
+	path = third_party/boost
+	url = https://github.com/boostorg/boost.git
