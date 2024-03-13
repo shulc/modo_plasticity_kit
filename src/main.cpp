@@ -107,7 +107,7 @@ struct asio_client_with_logger : public websocketpp::config::asio_client {
         transport_type;
 };
 
-typedef websocketpp::client<asio_client_with_logger> client;
+typedef websocketpp::client<websocketpp::config::asio_client> client;
 
 enum EMessageType {
     Transaction = 0,
