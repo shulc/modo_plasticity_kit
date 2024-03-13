@@ -1,0 +1,1780 @@
+/*
+ * LX item module
+ *
+ * Copyright (c) 2008-2022 The Foundry Group LLC
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.   Except as contained
+ * in this notice, the name(s) of the above copyright holders shall not be
+ * used in advertising or otherwise to promote the sale, use or other dealings
+ * in this Software without prior written authorization.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+#ifndef LX_item_H
+#define LX_item_H
+
+typedef struct vt_ILxSceneService ** ILxSceneServiceID;
+typedef struct vt_ILxSceneSubset ** ILxSceneSubsetID;
+typedef struct vt_ILxScene2Service ** ILxScene2ServiceID;
+typedef struct vt_ILxScene ** ILxSceneID;
+typedef struct vt_ILxItem ** ILxItemID;
+typedef struct vt_ILxSceneGraph ** ILxSceneGraphID;
+typedef struct vt_ILxItemGraph ** ILxItemGraphID;
+typedef struct vt_ILxChannelGraph ** ILxChannelGraphID;
+typedef struct vt_ILxSceneAssets ** ILxSceneAssetsID;
+typedef struct vt_ILxInstanceAssets ** ILxInstanceAssetsID;
+
+#include <lxvalue.h>
+#include <lxvmath.h>
+
+/*
+ * Item types are given by integers and also by unique names. -1 is normally used 
+ * to indicate all types, and 0 indicates no valid type, however any item type ID
+ * zero or less is invalid.
+ */
+
+        typedef int		 LXtItemType;
+        #define LXiTYPE_ANY	 -1
+        #define LXiTYPE_NONE	  0
+
+
+
+/*
+ * Get the script query object for the service.
+ * 
+ * The root scene acts as a container for all loaded scenes.  It is not visible
+ * to the user. Newly added scenes are created as sub-scenes of the root. This 
+ * method returns the global root scene, and can be used to walk all of the sub-scenes.
+ * 
+ * This returns the total number of item types.
+ * 
+ * This returns each item type by index into the global list.
+ * 
+ * Given a type name, this returns the type ID.
+ * 
+ * This method returns the internal name of a type given it's type ID.
+ * 
+ * Type codes can be tested for relationship.  This returns LXe_TRUE if
+ * 'what' is the same type as, or a sub-type of, 'isA.'
+ * 
+ * It is also possible to look up the super-type code from a type code.
+ * This returns LXe_NOTFOUND if the item type has no super-type.
+ * 
+ * This method returns the number of channels shared by two items.  This
+ * is the number of channels defined by their common ancestor type, if any.
+ * If they do not share any channels, this returns LXe_NOTFOUND;
+ * 
+ * This returns the number of subtypes for a given item type.
+ * 
+ * This return the the name of each subtype by index.
+ * 
+ * This function returns the number of components in the given one of the LXiCHANMODE_*
+ * defines.
+ * 
+ * Useful for UIs and configs, this function returns the text hints array
+ * for the vector modes.
+ * 
+ * Create an empty scene. This is parented to the root scene, and is truely
+ * empty not a default new scene.
+ * 
+ * Destroy a scene. Effectively the same as closing it. All references to the
+ * contents of the scene must have been released.
+ * 
+ * This method adds a sub-scene to another scene. The refItems flag can be
+ * set to have all items in the sub-cinema referenced in the parent.
+ * 
+ * This loads a scene as a sub-scene. If the parent scene is null this will be
+ * a root scene.
+ * 
+ * Support for finding source items for mesh instance items and the instances of mesh items
+ * takes the following form:
+ * Given an ILxItem of type LXi_CIT_INSTANCE, this function returns the LXi_CIT_MESH type
+ * source item.
+ * 
+ * 
+ * This method returns the number of mesh instances using the given mesh item as source.
+ * 
+ * This method returns the mesh instance using the given mesh item as source by index.
+ * 
+ * Images are loaded with the following method. The path is absolute and the object
+ * returned is the new clip item. The function can return LXe_FILE_REMAP if the path
+ * needed to be altered to find an image.
+ * 
+ * The GetReplicatorEnumerator interface allows you to get an enumerator for a replicator item
+ * to enumerate the positions & orientations of replicants generated by its particle source.
+ * 
+ * Read the value of a tag for an item type, if any. If super is true the supertypes
+ * will also be checked.
+ * 
+ * It is often useful to collect associated items in a particular graph, and populate
+ * an ILxItemCollection. This function will enumerate over all items of the provided
+ * type in the ILxItemCollection, and all items to the collection that are connected
+ * to the item in the named graph. The fwd argument specifies the direction to walk
+ * the graph.
+ * 
+ * Call this service method to allocate an empty collection.
+ * 
+ * A collection can be closed given a closure mode. All items matching the
+ * mode are added to the collection. NONE can be used just to merge the recently
+ * added items so they can be tested.
+ * 
+ * Returns LXe_TRUE or LXe_FALSE if the item type supports the provided COM
+ * interface.
+ */
+typedef struct vt_ILxSceneService {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LxResult,
+ScriptQuery) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+Root) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD( unsigned,
+ItemTypeCount) (
+        LXtObjectID		 self);
+        LXxMETHOD( LxResult,
+ItemTypeByIndex) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        LXtItemType		*type);
+        LXxMETHOD( LxResult,
+ItemTypeLookup) (
+        LXtObjectID		 self,
+        const char		*name,
+        LXtItemType		*type);
+        LXxMETHOD( LxResult,
+ItemTypeName) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        const char	       **name);
+        LXxMETHOD( LxResult,
+ItemTypeTest) (
+        LXtObjectID		 self,
+        LXtItemType		 what,
+        LXtItemType		 isA);
+        LXxMETHOD( LxResult,
+ItemTypeSuper) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        LXtItemType		*super);
+        LXxMETHOD( LxResult,
+ItemTypeCommonChannels) (
+        LXtObjectID		 self,
+        LXtObjectID		 item1,
+        LXtObjectID		 item2,
+        unsigned		*count);
+        LXxMETHOD( LxResult,
+ItemSubTypeCount) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		*count);
+        LXxMETHOD( LxResult,
+ItemSubTypeByIndex) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		 index,
+        const char	       **subtype);
+        LXxMETHOD( LxResult,
+ChannelVectorSize) (
+        LXtObjectID		 self,
+        unsigned int		 mode,
+        unsigned int		*size);
+        LXxMETHOD( LxResult,
+ChannelVectorTextHints) (
+        LXtObjectID		 self,
+        const LXtTextValueHint **hints);
+        LXxMETHOD(  LxResult,
+CreateScene) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+DestroyScene) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene);
+        LXxMETHOD(  LxResult,
+SubSceneAdd) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        LXtObjectID		 other,
+        unsigned		 refItems);
+        LXxMETHOD(  LxResult,
+SubSceneLoad) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        const char		*path,
+        LXtObjectID		 monitor,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+GetMeshInstSourceItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 inst,
+        void		       **ppvObj);
+        LXxMETHOD(  int,
+MeshInstanceCount) (
+        LXtObjectID		 self,
+        LXtObjectID		 mesh);
+        LXxMETHOD(  LxResult,
+MeshInstanceByIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 mesh,
+        int			 index,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+LoadImage) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        const char		*path,
+        LXtObjectID		 monitor,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+GetReplicatorEnumerator) (
+        LXtObjectID		 self,
+        LXtObjectID		 replicatorItem,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+ItemTypeGetTag) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        const char		*tag,
+        unsigned		 super,
+        const char	       **value);
+        LXxMETHOD( LxResult,
+ItemGraphCollection) (
+        LXtObjectID		 self,
+        LXtObjectID		 collection,
+        LXtItemType		 type,
+        const char		*graph,
+        int			 fwd);
+        LXxMETHOD(  LxResult,
+AllocEmptyCollection) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+CloseCollection) (
+        LXtObjectID		 self,
+        LXtObjectID		 collection,
+        unsigned		 mode);
+        LXxMETHOD(  LxResult,
+ItemTypeSupportsInterface) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        const LXtGUID		*guid);
+} ILxSceneService;
+
+typedef struct vt_ILxSceneSubset {
+        ILxUnknown	 iunk;
+        LXxMETHOD( LxResult,
+GetScene) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+GetCollection) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+} ILxSceneSubset;
+
+typedef struct vt_ILxScene2Service {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LxResult,
+ScriptQuery) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+
+        LXxMETHOD(  LxResult,
+Root) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+
+        LXxMETHOD( LxResult,
+LoadImage) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        const char		*name,
+        unsigned		*flags,
+        LXtObjectID		 monitor,
+        void		       **ppvObj);
+
+        LXxMETHOD( unsigned,
+ItemTypeCount) (
+        LXtObjectID		 self);
+
+        LXxMETHOD( LxResult,
+ItemTypeByIndex) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        LXtItemType		*type);
+
+        LXxMETHOD( LxResult,
+ItemTypeLookup) (
+        LXtObjectID		 self,
+        const char		*name,
+        LXtItemType		*type);
+
+        LXxMETHOD( LxResult,
+ItemTypeName) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        const char	       **name);
+
+        LXxMETHOD( LxResult,
+ItemTypeTest) (
+        LXtObjectID		 self,
+        LXtItemType		 what,
+        LXtItemType		 isA);
+
+        LXxMETHOD( LxResult,
+ItemTypeSuper) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        LXtItemType		*super);
+
+        LXxMETHOD( LxResult,
+ItemTypeCommonChannels) (
+        LXtObjectID		 self,
+        LXtObjectID		 item1,
+        LXtObjectID		 item2,
+        unsigned		*count);
+
+        LXxMETHOD( LxResult,
+ItemSubTypeCount) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		*count);
+
+        LXxMETHOD( LxResult,
+ItemSubTypeByIndex) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		 index,
+        const char	       **subtype);
+
+        LXxMETHOD( LxResult,
+ChannelVectorSize) (
+        LXtObjectID		 self,
+        unsigned int		 mode,
+        unsigned int		*size);
+
+        LXxMETHOD( LxResult,
+ChannelVectorTextHints) (
+        LXtObjectID		 self,
+        const LXtTextValueHint **hints);
+
+        LXxMETHOD(  LxResult,
+SubSceneAdd) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        LXtObjectID		 other,
+        unsigned		 refItems);
+
+        LXxMETHOD(  LxResult,
+SubSceneLoad) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        const char		*path,
+        LXtObjectID		 monitor,
+        void		       **ppvObj);
+
+        LXxMETHOD(  LxResult,
+Import) (
+        LXtObjectID		 self,
+        LXtObjectID		 scene,
+        const char		*path,
+        LXtObjectID		 monitor);
+
+        LXxMETHOD(  LxResult,
+WorldTransform) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        double			 time,
+        LXtMatrix		 xfrm,
+        LXtVector		 pos);
+
+        LXxMETHOD(  LxResult,
+GetTransformItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        unsigned		 type,
+        void		       **ppvObj);
+
+        LXxMETHOD(  LxResult,
+AddTransformItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        unsigned		 type,
+        void		       **ppvObj,
+        unsigned		*index);
+
+        LXxMETHOD(  LxResult,
+SetTransformVector) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        LXtObjectID		 chanWrite,
+        unsigned		 type,
+        LXtVector		 value);
+
+        LXxMETHOD(  LxResult,
+AddPreTransformItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        LXtObjectID		 chanWrite,
+        unsigned		 type,
+        LXtVector		 value,
+        void		       **ppvObj,
+        unsigned		*index);
+
+        LXxMETHOD(  LxResult,
+AddPostTransformItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        LXtObjectID		 chanWrite,
+        unsigned		 type,
+        LXtVector		 value,
+        void		       **ppvObj,
+        unsigned		*index);
+
+        LXxMETHOD(  LxResult,
+GetMeshInstSourceItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 inst,
+        void		       **ppvObj);
+
+        LXxMETHOD(  int,
+MeshInstanceCount) (
+        LXtObjectID		 self,
+        LXtObjectID		 mesh);
+
+        LXxMETHOD(  LxResult,
+MeshInstanceByIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 mesh,
+        int			 index,
+        void		       **ppvObj);
+
+        LXxMETHOD(  LxResult,
+SetTarget) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        LXtObjectID		 target,
+        void	    		**ppvObj);
+
+        LXxMETHOD(  LxResult,
+PrependTransformItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        LXtObjectID		 chanWrite,
+        unsigned		 type,
+        LXtVector		 value,
+        void		       **ppvObj,
+        unsigned		*index);
+
+        LXxMETHOD(  LxResult,
+AppendTransformItem) (
+        LXtObjectID		 self,
+        LXtObjectID		 locator,
+        LXtObjectID		 chanWrite,
+        unsigned		 type,
+        LXtVector		 value,
+        void		       **ppvObj,
+        unsigned		*index);
+} ILxScene2Service;
+
+/*
+ * Scenes can be set to represent a particular item type.  This is done
+ * either on creation or during loading and cannot be subsequently changed.
+ * For example, a scene that represents a 3d object will have an item type
+ * of "mesh", a scene storing an image file will have an item type of
+ * "clip" etc. This function returns the root item type that the scene
+ * represents or zero if there is no specific type.
+ * 
+ * This returns the filename of the scene.  The path is system-specific.
+ * This will return LXe_FALSE if the scene is unnamed, LXe_OK otherwise.
+ * 
+ * This method returns a human readable version of the filename suitable for
+ * display in the UI.  The SHORT flag removes the file type extension, and
+ * STAR adds an asterisk for changed cinemas.
+ * 
+ * This returns the file format of the scene, which determines how the scene
+ * will be saved.
+ * 
+ * Pass in 1 to indicate that the scene has been modified, and 0 to reset the
+ * state back to unchanged.
+ * 
+ * This returns LXe_TRUE if the scene has changed, and LXe_FALSE if
+ * it has not.  It can also provide the number of changes since the
+ * last reset.
+ * 
+ * This method returns the parent ILxScene, or LXe_NOTFOUND if this is the
+ * root scene, Thus this method can also be used to test if this scene is
+ * the root scene.
+ * 
+ * The the scene's sub-scenes can be enumerated. The type argument can be used 
+ * to filter the list by root type, or can be -1 to list all scenes. This method
+ * returns the number of sub-scenes.
+ * 
+ * This method returns the sub-scene by index.
+ * 
+ * Scene target flags ( LXf_SCENETARG_ ) set by the loader can be read with
+ * this method.
+ * 
+ * This function can allocate a channel I/O object presenting ILxChannelRead and
+ * ILxChannelWrite interfaces.  The name indicates the name of the action to use,
+ * and a null name will evaluate final channels.  The time specifies when values
+ * will be read, set or evaluated.
+ * 
+ * The most notable attribute of scenes is that they contain items.  The
+ * item list can be enumerated with these methods.  Items themselves are
+ * represented as ILxItemIDs. This method gets the number of items of a
+ * given type.
+ * 
+ * This returns an item of the given type by index.
+ * 
+ * Items can be looked up by their ID string or by unique name.
+ * 
+ * These methods allow enumeration of items by multiple types. The 'types' argument
+ * is a zero-terminated array of item types. This method get the count.
+ * 
+ * This method gets an item by types by index.
+ * 
+ * This method returns LXe_TRUE if an item of a given type
+ * exists in the scene and returns it.
+ * 
+ * This method returns the item in the given scene which is the same as,
+ * or a reference to, the given item.  If there is no reference, the
+ * method will return LXe_NOTFOUND.
+ * 
+ * This method creates a new item of the given type and adds it to the
+ * scene.
+ * 
+ * This method creates a duplicate of an existing item.  Also known as an
+ * instance.
+ * 
+ * This creates a new reference top an existing item in the scene.  If
+ * the reference already exists, it is returned isntead.
+ * 
+ * This method returns a scene graph from an ILxScene by name.
+ * 
+ * The graph list can be walked directly to get all graphs in the scene. This method
+ * returns the number of graphs.
+ * 
+ * This method returns the graph from the scene by index.
+ * 
+ * Methods are added here since we want them at the end of the structure.
+ * 
+ * This loads a file into an existing scene.  A monitor must be provided, and
+ * can be obtained from [[DialogService (interface)]].
+ * 
+ * Invalidate an EvalModifier with the given server name. This is done automatically
+ * for item and graph events, but can also be done manually for other changes. Out of
+ * date modifier nodes will be destroyed and new ones created, allowing nodes to
+ * change their inputs and outputs.
+ * 
+ * Reset the state of an eval modifier. Modifier nodes remain as they are but any
+ * cached state is invalidated.
+ * 
+ * Create a new item with the specified type from passed item, replacing the original.
+ * 
+ * This returns LXe_TRUE if the scene is in "Setup Mode", and LXe_FALSE otherwise.
+ * 
+ * Alternate version of the Channels function, which evaluates channels in Setup mode.
+ * 
+ * Lookup item using ident only, not full name.
+ * 
+ * During import old idents can be used to look up imported items which will
+ * have been given new idents.
+ * 
+ * These functions can be used to get a list of all the possible (linked) render
+ * cameras.
+ * 
+ * Note that if RenderCameraCount gives zero, feeding a value of -1 into
+ * RenderCameraByIndex will actually get the render camera (which can be
+ * any camera).
+ * 
+ * And this function, which takes in an eval, gets the current render camera index.
+ * 
+ * This method creates a duplicate of an existing item.
+ * 
+ * Items can be created in batch mode, where they are created in an incomplete
+ * state which is only finalized when the batch is ended. If the copy fails the
+ * client must call the abort function.
+ * Start a batch for item creation.
+ * 
+ * 
+ * End batch item creation.
+ * 
+ * Abort batch item creation.
+ * 
+ * Likewise copying items can be done in a batch state. This also allows the client
+ * to specify a different destination scene for the copies to be created.
+ * Start a batch copy, setting the destination scene if different.
+ * 
+ * 
+ * End batch item copy.
+ * 
+ * Abort batch item copy.
+ * 
+ * This function can be used to get the world rotation of the workplane.
+ * 
+ * This function can be used to get the world position of the workplane.
+ * 
+ * These function will return a list of items matching the item list type
+ * and arguments. The returned object is an ItemCollection. Because this is
+ * normally used for UI purposes, the collection includes only items that
+ * are visible to the user and filters out items that the user shouldn't
+ * see. There is an alternate "raw" form to get the unfiltered list.
+ * Get a collection of visible items.
+ * 
+ * 
+ * Get a collection of all items.
+ * 
+ * This method allocates a new asset object for the scene.
+ * 
+ * Delete all items belonging to a collection. The collection can be closed first,
+ * either deep or shallow.
+ * 
+ * Often it can be useful to "fake" a scene load, populating a scene with items
+ * directly, rather than using a loader. This function will call a visitor, which
+ * can be used to add items into a scene. The advantage of this mechanism, is that
+ * any event notifications will be deferred until the "load" is complete, which
+ * could have a positive effect on performance.
+ * 
+ * This method creates a duplicate of an existing texture layer, including its
+ * children and texture locators.
+ */
+typedef struct vt_ILxScene {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LXtItemType,
+ItemRootType) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+Filename) (
+        LXtObjectID		 self,
+        const char	       **filename);
+        LXxMETHOD(  LxResult,
+FriendlyFilename) (
+        LXtObjectID		 self,
+        unsigned		 flags,
+        const char	       **filename);
+        LXxMETHOD(  LxResult,
+FileFormat) (
+        LXtObjectID		 self,
+        const char	       **format);
+        LXxMETHOD(  LxResult,
+Changed) (
+        LXtObjectID		 self,
+        unsigned		 changed);
+        LXxMETHOD(  LxResult,
+HasChanged) (
+        LXtObjectID		 self,
+        unsigned int		*numChanges);
+        LXxMETHOD(  LxResult,
+Parent) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+SubSceneCount) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		*count);
+        LXxMETHOD(  LxResult,
+SubSceneByIndex) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		 index,
+        void		       **ppvObj);
+        LXxMETHOD(  unsigned,
+LoadFlags) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+Channels) (
+        LXtObjectID		 self,
+        const char		*name,
+        double			 time,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemCount) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		*count);
+        LXxMETHOD(  LxResult,
+ItemByIndex) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        unsigned int		 index,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemLookup) (
+        LXtObjectID		 self,
+        const char		*id,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemCountByTypes) (
+        LXtObjectID		 self,
+        const LXtItemType	*types,
+        unsigned		*count);
+        LXxMETHOD(  LxResult,
+ItemByIndexByTypes) (
+        LXtObjectID		 self,
+        const LXtItemType	*types,
+        unsigned		 index,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+AnyItemOfType) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemLocalize) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemAdd) (
+        LXtObjectID		 self,
+        LXtItemType		 type,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemInstance) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemAddReference) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+GraphLookup) (
+        LXtObjectID		 self,
+        const char		*name,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+GraphCount) (
+        LXtObjectID		 self,
+        int			*count);
+        LXxMETHOD(  LxResult,
+GraphByIndex) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemRemove) (
+        LXtObjectID		 self,
+        LXtObjectID		 item);
+        LXxMETHOD(  LxResult,
+Import) (
+        LXtObjectID		 self,
+        const char		*path,
+        LXtObjectID		 monitor);
+        LXxMETHOD(  LxResult,
+EvalModInvalidate) (
+        LXtObjectID		 self,
+        const char		*modName);
+        LXxMETHOD(  LxResult,
+EvalModReset) (
+        LXtObjectID		 self,
+        const char		*modName);
+        LXxMETHOD(  LxResult,
+ItemReplace) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        int			 type,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+SetupMode) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+SetupChannels) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemLookupIdent) (
+        LXtObjectID		 self,
+        const char		*id,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+ItemLookupImported) (
+        LXtObjectID		 self,
+        const char		*id,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+RenderCameraCount) (
+        LXtObjectID		 self,
+        int			*count);
+        LXxMETHOD(  LxResult,
+RenderCameraByIndex) (
+        LXtObjectID		 self,
+        int			 index,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+RenderCameraIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 eval,
+        int			*index);
+        LXxMETHOD(  LxResult,
+ItemCopy) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+BatchCreateBegin) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+BatchCreateEnd) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+BatchCreateAbort) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+BatchCopyBegin) (
+        LXtObjectID		 self,
+        LXtObjectID		 destination);
+        LXxMETHOD(  LxResult,
+BatchCopyEnd) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+BatchCopyAbort) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+WorkPlaneRotation) (
+        LXtObjectID		 self,
+        LXtObjectID		 chanRead,
+        LXtMatrix		 m3);
+        LXxMETHOD(  LxResult,
+WorkPlanePosition) (
+        LXtObjectID		 self,
+        LXtObjectID		 chanRead,
+        LXtVector		 pos);
+        LXxMETHOD(  LxResult,
+GeneralCollection) (
+        LXtObjectID		 self,
+        const char		*typeName,
+        const char		*arg,
+        LXtObjectID		 rootItem,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+GeneralCollectionRaw) (
+        LXtObjectID		 self,
+        const char		*typeName,
+        const char		*arg,
+        LXtObjectID		 rootItem,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+AllocAssets) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+DeleteCollection) (
+        LXtObjectID		 self,
+        LXtObjectID		 collection,
+        unsigned		 closeMode);
+        LXxMETHOD(  LxResult,
+CustomLoad) (
+        LXtObjectID		 self,
+        LXtObjectID		 visitor);
+        LXxMETHOD(  LxResult,
+TextureCopy) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        void		       **ppvObj);
+} ILxScene;
+
+/*
+ * This returns the item's type. Returns LXiTYPE_NONE if the item has been destroyed.
+ * 
+ * This returns true if an item matches or inherits from a given type.
+ * 
+ * This returns true if an item matches or inherits from a list of types.
+ * 
+ * This returns the unique identifier string of the item. The pointer value itself
+ * can also be used as a unique identifier (since that's rather hard to do with COM
+ * interfaces) since it will never change once item creation or loading is complete.
+ * 
+ * The ident string can also be set. This should only be done during loading, where
+ * an item already has a well-define ident that already doesn't conflict with any
+ * of the others in the same scene.
+ * 
+ * The item's raw name can be read with this methods. The name read this way does 
+ * not contain the disambiguating suffix, and it may be null if unset.
+ * 
+ * The raw name can be set with this method. The item's actual name may differ
+ * from this string if some other item already has the same name.
+ * 
+ * A unique, human-readable name can also be returned. This name is suffixed
+ * with a number if necessary, in the user's preferred format. This may also be
+ * a synthetic name, generated from the state of the item.
+ * 
+ * The number which is appended to non-unique names to make them unique is persistent.
+ * Since it's logically part of the name the user keeps in mind for the item, we
+ * would like it to be the same after saving and loading. This method returns the
+ * index assigned to the item.
+ * 
+ * This method allows the index to be reset during loading.
+ * 
+ * This returns the parent item, or LXe_NOTFOUND if there is no parent
+ * because this is a root item.
+ * 
+ * This can be used to set the parent item and place the child at the end of the list of parents children.
+ * 
+ * These methods allow the item hierarchy within the scene to be walked. This
+ * returns the number of child items parented to this item.
+ * 
+ * This returns a child item by index.
+ * 
+ * This returns the item's ancestor at the root of the scene,
+ * failing with LXe_NOTFOUND if this is a root item.
+ * 
+ * This method returns the scene that the item belongs to.
+ * 
+ * This returns an item from a sub-scene if this item is a reference.
+ * If this item is native to its cinema this returns LXe_FAILED.
+ * 
+ * This returns LXe_TRUE if the item is referenced by any other item,
+ * meaning that it is part of any other hypergraph besides the parenting
+ * one.
+ * 
+ * The source for an item is another item of the same or similar item type
+ * which is used as a source for undefined channels of this item.  This is
+ * normally set implicitly by CineItemDuplicate(). This method returns the
+ * source item.
+ * 
+ * This method sets the source item.
+ * 
+ * Items have parameter channels, values which vary by time and other
+ * circumstances.  The channel is given by an index, and it is possible to
+ * iterate through all the channels in an item.  This method returns the
+ * number of channels, and the indices go from 0 to N-1.  Although many
+ * channels are common for items of the same type, they may also vary by
+ * item.
+ * 
+ * This can be used to lookup the channel by name, returning its index.
+ * 
+ * This returns the internal name of the channel, suitable for lookup.
+ * 
+ * This method returns the channel type given by the following predefined
+ * codes.  The numeric and gradient types can be keyframed.  The custom
+ * channel types can be stored in the action or they can be for evaluation
+ * only.
+ * 
+ * This method returns the vector mode for the channel, one of the LXiCHANMODE_*
+ * vector settings chosen as the channel is defined.  If this is part of a
+ * vector then the component index (usually 0-2) is returned along with LXe_TRUE;
+ * otherwise, this returns LXe_FALSE.
+ * 
+ * This method returns the storage type of the channel, which can be valid
+ * exo-type name for numeric and stored custom types.
+ * 
+ * This returns the evaluation type of a channel, which is the type of slot
+ * allocated in the eval state vector.  This will return the "gradstack"
+ * exo-type for gradient channels.
+ * 
+ * This method returns LXe_TRUE if the channel is a gradient, and returns
+ * the input and output types indirectly as well.
+ * 
+ * This method returns the text hints for integer channels.  If there are
+ * no hints, this returns LXe_NOTAVAILABLE.  This will fail if the channel
+ * is not an integer channel.
+ * 
+ * The package a channel belongs to can be found with this function. The package
+ * name is returned unless this is a user channel.
+ * 
+ * Packages can be added to items directly.  When a package is added, the
+ * channels for the package are added to the item, and the local data for
+ * the package is allocated and initialized for this item.  If this item
+ * already has this package, then this function does nothing.
+ * 
+ * A item can be tested to see if it already has the given package.  This
+ * returns LXe_TRUE if the package has been added to this item.
+ * 
+ * This returns the index of the first channel in the package.  This index
+ * is item specific, as different items may have different combinations of
+ * packages applied.
+ * 
+ * Packages can be removed with this function.
+ * 
+ * New user channels can be added directly to items using the following
+ * method. This returns an ILxAddChannel interface that will are appended new
+ * channels after the channels defined for the items type and any packages.
+ * NOTE: This only works during load, adding user channels to items in the
+ * process of loading. It doesn't currently support adding channels in any
+ * other context.
+ * 
+ * 
+ * Look up an item's tag value by type code.
+ * 
+ * Set the tag string associated with the type code.
+ * 
+ * This is called by the package that implements the item, indicating that its
+ * synthetic name, if it has one, should be updated.
+ * 
+ * Returns LXe_TRUE if this item was part of the most recent load or import. Flags
+ * can further refine the test to just import or items being loaded currently.
+ * 
+ * Delete the item from the scene.
+ * 
+ * This returns LXe_TRUE if the specified channel is driven by a modifier, otherwise
+ * LXe_FALSE is returned.
+ * 
+ * This can be used to set the parent item and childs position in the list of parents children.
+ * 
+ * Returns a human-readable name. Unlike the unique name, this name is not suffixed
+ * with a number to ensure uniqueness, instead returning the base name.
+ */
+typedef struct vt_ILxItem {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LXtItemType,
+Type) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+TestType) (
+        LXtObjectID		 self,
+        LXtItemType		 type);
+        LXxMETHOD(  LxResult,
+TestTypes) (
+        LXtObjectID		 self,
+        const LXtItemType	*types);
+        LXxMETHOD(  LxResult,
+Ident) (
+        LXtObjectID		 self,
+        const char	       **ident);
+        LXxMETHOD(  LxResult,
+SetIdent) (
+        LXtObjectID		 self,
+        const char		*ident);
+        LXxMETHOD(  LxResult,
+Name) (
+        LXtObjectID		 self,
+        const char	       **name);
+        LXxMETHOD(  LxResult,
+SetName) (
+        LXtObjectID		 self,
+        const char		*name);
+        LXxMETHOD(  LxResult,
+UniqueName) (
+        LXtObjectID		 self,
+        const char	       **name);
+        LXxMETHOD(  LxResult,
+UniqueIndex) (
+        LXtObjectID		 self,
+        unsigned		*index);
+        LXxMETHOD(  LxResult,
+SetUniqueIndex) (
+        LXtObjectID		 self,
+        unsigned		 index);
+        LXxMETHOD( LxResult,
+Parent) (
+        LXtObjectID		 self,
+        void			**ppvObj);
+        LXxMETHOD( LxResult,
+SetParent) (
+        LXtObjectID		 self,
+        LXtObjectID		 parent);
+        LXxMETHOD(  LxResult,
+SubCount) (
+        LXtObjectID		 self,
+        unsigned		*count);
+        LXxMETHOD(  LxResult,
+SubByIndex) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+Root) (
+        LXtObjectID		 self,
+        void			**ppvObj);
+        LXxMETHOD( LxResult,
+Context) (
+        LXtObjectID		 self,
+        void			**ppvObj);
+        LXxMETHOD( LxResult,
+Reference) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+IsReferenced) (
+        LXtObjectID		 self);
+        LXxMETHOD( LxResult,
+Source) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+SetSource) (
+        LXtObjectID		 self,
+        LXtObjectID		 source);
+        LXxMETHOD(  LxResult,
+ChannelCount) (
+        LXtObjectID		 self,
+        unsigned		*count);
+        LXxMETHOD(  LxResult,
+ChannelLookup) (
+        LXtObjectID		 self,
+        const char		*name,
+        unsigned		*index);
+        LXxMETHOD(  LxResult,
+ChannelName) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char		**name);
+        LXxMETHOD(  LxResult,
+ChannelType) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        unsigned		*type);
+        LXxMETHOD(  LxResult,
+ChannelVectorMode) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        unsigned		*mode,
+        unsigned		*components);
+        LXxMETHOD(  LxResult,
+ChannelStorageType) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char		**type);
+        LXxMETHOD(  LxResult,
+ChannelEvalType) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char		**type);
+        LXxMETHOD(  LxResult,
+ChannelGradient) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char	       **input,
+        const char	       **output);
+        LXxMETHOD(  LxResult,
+ChannelIntHint) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const LXtTextValueHint **hints);
+        LXxMETHOD(  LxResult,
+ChannelPackage) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char	       **package);
+        LXxMETHOD(  LxResult,
+PackageAdd) (
+        LXtObjectID		 self,
+        const char		*package);
+        LXxMETHOD(  LxResult,
+PackageTest) (
+        LXtObjectID		 self,
+        const char		*package);
+        LXxMETHOD(  LxResult,
+PackageStartIndex) (
+        LXtObjectID		 self,
+        const char		*package,
+        unsigned		*index);
+        LXxMETHOD(  LxResult,
+PackageRemove) (
+        LXtObjectID		 self,
+        const char		*package);
+        LXxMETHOD(  LxResult,
+ChannelAdd) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  const char *,
+GetTag) (
+        LXtObjectID		 self,
+        LXtID4                   type);
+        LXxMETHOD(  LxResult,
+SetTag) (
+        LXtObjectID		 self,
+        LXtID4                   type,
+        const char		*tag);
+        LXxMETHOD(  void,
+InvalidateName) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+WasLoaded) (
+        LXtObjectID		 self,
+        unsigned		 test);
+        LXxMETHOD(  LxResult,
+Delete) (
+        LXtObjectID		 self);
+        LXxMETHOD(  LxResult,
+ChannelIsDriven) (
+        LXtObjectID		 self,
+        unsigned		 index);
+        LXxMETHOD (LxResult,
+SetParentAndPosition) (
+        LXtObjectID		 self,
+        LXtObjectID		 parent,
+        unsigned		 pos);
+        LXxMETHOD(  LxResult,
+BaseName) (
+        LXtObjectID		 self,
+        const char	       **name);
+} ILxItem;
+
+/*
+ * This method returns the name of a graph.
+ * 
+ * This returns the scene that the graph belongs to.
+ * 
+ * Graphs can maintain root items in a specific order.  Root items are those that
+ * do not link to any other items, like items without parents.  This method returns
+ * the number of root items. .
+ * 
+ * This method gets a root item by index.
+ * 
+ * Accessing root items by index can be slow. Instead the root items can be
+ * traversed by calling this function to get the first root item.
+ * 
+ * Once the first root item has been read, calling this function will read
+ * subsequent root items.
+ * 
+ * This function will place the given root item at the given index in the sequence.
+ * It returns LXe_OK on success, and an error code for failures including if the
+ * item is not in fact a root item.
+ * 
+ * Since clients can directly manipulate the graph links, this function should
+ * be called to remove an item from the root sequence if it's no longer a root item.
+ */
+typedef struct vt_ILxSceneGraph {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LxResult,
+Name) (
+        LXtObjectID		 self,
+        const char	       **name);
+        LXxMETHOD(  LxResult,
+Context) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+RootCount) (
+        LXtObjectID		 self,
+        int			*count);
+        LXxMETHOD(  LxResult,
+RootByIndex) (
+        LXtObjectID		 self,
+        int			 index,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+RootFirst) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+RootNext) (
+        LXtObjectID		 self,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+RootSetPos) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        int			 pos);
+        LXxMETHOD(  LxResult,
+RootRemove) (
+        LXtObjectID		 self,
+        LXtObjectID		 item);
+} ILxSceneGraph;
+
+/*
+ * Links can be established between any pair of nodes provided the rules for the
+ * graph allow it. This function adds a link from one node to another, and
+ * the new reference is added to the end of each node's list.
+ * This allows new links to be added or the order of existing links to be changed.
+ * The link will take on the corresponding index in the forward and reverse lists
+ * for each node.  An index value of -1 leaves the index unchanged, and a positive
+ * index out of range puts the link at the end of the list.
+ * 
+ * The function removes the link between two nodes.  In theory it can fail based
+ * on the rules for the graph, but in practice it generally doesn't.
+ * 
+ * For nodes which are the source or destination of links, the links can be queried
+ * by using a count/byIndex syntax. Forward links take the 'from' item and 
+ * enumerate the 'to' items. Reverse links take the 'to' item and enumerate the
+ * 'from' items.
+ * This gets the count of forward links.
+ * 
+ * 
+ * This get the destination of the forward link by index.
+ * 
+ * This gets the count of reverse links.
+ * 
+ * This get the source of the reverse link by index.
+ */
+typedef struct vt_ILxItemGraph {
+        ILxUnknown	 iunk;
+        LXxMETHOD( LxResult,
+AddLink) (
+        LXtObjectID		 self,
+        LXtObjectID		 from,
+        LXtObjectID		 to);
+        LXxMETHOD( LxResult,
+SetLink) (
+        LXtObjectID		 self,
+        LXtObjectID		 from,
+        int			 fromIndex,
+        LXtObjectID		 to,
+        int			 toIndex);
+        LXxMETHOD( LxResult,
+DeleteLink) (
+        LXtObjectID		 self,
+        LXtObjectID		 from,
+        LXtObjectID		 to);
+        LXxMETHOD( LxResult,
+FwdCount) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        unsigned		*count);
+        LXxMETHOD( LxResult,
+FwdByIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        unsigned		 index,
+        void		       **ppvObj);
+        LXxMETHOD( LxResult,
+RevCount) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        unsigned		*count);
+        LXxMETHOD( LxResult,
+RevByIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        unsigned		 index,
+        void		       **ppvObj);
+} ILxItemGraph;
+
+/*
+ * Create a link from an item/channel to an item/channel pair.
+ * Create or reorder a link from an item/channel to an item/channel pair.
+ * 
+ * Remove a channel link.
+ * 
+ * Get the count of forward links from this channel.
+ * 
+ * Get the destination of a forward link by index.
+ * 
+ * Get the count of reverse links to this channel.
+ * 
+ * Get the source of a reverse link by index.
+ */
+typedef struct vt_ILxChannelGraph {
+        ILxUnknown	 iunk;
+        LXxMETHOD( LxResult,
+AddLink) (
+        LXtObjectID		 self,
+        LXtObjectID		 from,
+        int			 fromChan,
+        LXtObjectID		 to,
+        int			 toChan);
+        LXxMETHOD( LxResult,
+SetLink) (
+        LXtObjectID		 self,
+        LXtObjectID		 from,
+        int			 fromChan,
+        int			 fromIndex,
+        LXtObjectID		 to,
+        int			 toChan,
+        int			 toIndex);
+        LXxMETHOD( LxResult,
+DeleteLink) (
+        LXtObjectID		 self,
+        LXtObjectID		 from,
+        int			 fromChan,
+        LXtObjectID		 to,
+        int			 toChan);
+        LXxMETHOD( LxResult,
+FwdCount) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        int			 channel,
+        unsigned		*count);
+        LXxMETHOD( LxResult,
+FwdByIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        int			 channel,
+        unsigned		 index,
+        void		       **ppvObj,
+        int			*objChan);
+        LXxMETHOD( LxResult,
+RevCount) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        int			 channel,
+        unsigned		*count);
+        LXxMETHOD( LxResult,
+RevByIndex) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        int			 channel,
+        unsigned		 index,
+        void		       **ppvObj,
+        int			*objChan);
+} ILxChannelGraph;
+
+/*
+ * Get the total number of asset references in the scene.
+ * 
+ * Get the item for an asset by index.
+ * 
+ * Get the ident string for an asset by index. The ident will uniquely identify
+ * this asset with respect to the item.
+ * 
+ * Get the type This is essentially a file type
+ * and can be used when opening dialogs.
+ * 
+ * Get the category string for an asset by index. This is an identifier for
+ * grouping like assets together, and may just be the item type.
+ * 
+ * Test an asset by index to determine if it's a normal path or sequence pattern.
+ * 
+ * Given the item and asset ident, this returns the current path. Returns NOTFOUND 
+ * if unset.
+ * 
+ * Given the item and asset ident, this resets the current path. This alters the 
+ * scene and redirects the item to use the new file.
+ */
+typedef struct vt_ILxSceneAssets {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LxResult,
+Count) (
+        LXtObjectID		 self,
+        unsigned		*count);
+        LXxMETHOD(  LxResult,
+Item) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        void		       **ppvObj);
+        LXxMETHOD(  LxResult,
+Ident) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char 	       **ident);
+        LXxMETHOD(  LxResult,
+FileType) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char 	       **type);
+        LXxMETHOD(  LxResult,
+Category) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        const char 	       **category);
+        LXxMETHOD(  LxResult,
+IsSequence) (
+        LXtObjectID		 self,
+        unsigned		 index);
+        LXxMETHOD(  LxResult,
+GetPath) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        const char		*ident,
+        char			*buf,
+        unsigned		 len);
+        LXxMETHOD(  LxResult,
+SetPath) (
+        LXtObjectID		 self,
+        LXtObjectID		 item,
+        const char		*ident,
+        const char		*newPath);
+} ILxSceneAssets;
+
+/*
+ * Get the number of asset references for this item.
+ * Get the required information about an asset reference by index. The string
+ * returned through the buffer is the ident.
+ * 
+ * Get optional category.
+ * 
+ * Get the path given the ident.
+ * 
+ * Set the path given the ident, altering the scene.
+ */
+typedef struct vt_ILxInstanceAssets {
+        ILxUnknown	 iunk;
+        LXxMETHOD(  LxResult,
+Count) (
+        LXtObjectID		 self,
+        unsigned		*count);
+        LXxMETHOD(  LxResult,
+IdentByIndex) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        unsigned		*isSeq,
+        const char	       **fileType,
+        char			*buf,
+        unsigned		 len);
+        LXxMETHOD(  LxResult,
+Category) (
+        LXtObjectID		 self,
+        unsigned		 index,
+        char			*buf,
+        unsigned		 len);
+        LXxMETHOD(  LxResult,
+GetPath) (
+        LXtObjectID		 self,
+        const char		*ident,
+        char			*buf,
+        unsigned		 len);
+        LXxMETHOD(  LxResult,
+SetPath) (
+        LXtObjectID		 self,
+        const char		*ident,
+        const char		*newPath);
+} ILxInstanceAssets;
+
+/*
+ * The scene service provides high-level scene and item system access. These methods
+ * are provided as general services that could be useful on any item.
+ */
+
+        #define LXa_SCENESERVICE	"sceneservice3"
+        #define LXu_SCENESERVICE	"50190141-0059-48FE-B27D-6C98E1348D7B"
+        // [python] ILxSceneService:CreateScene			obj Scene
+        // [python] ILxSceneService:GetMeshInstSourceItem	obj Item
+        // [python] ILxSceneService:GetReplicatorEnumerator	obj ReplicatorEnumerator (particle)
+        // [python] ILxSceneService:LoadImage			obj Item
+        // [python] ILxSceneService:MeshInstanceByIndex		obj Item
+        // [python] ILxSceneService:Root			obj Scene
+        // [python] ILxSceneService:SubSceneLoad		obj Scene
+        // [python] ILxSceneService:AllocEmptyCollection	obj ItemCollection
+        // [python] ILxSceneService:ItemTypeTest		bool
+        // [python] ILxSceneService:ItemTypeSupportsInterface	bool
+
+/*
+ * Saving scenes is done through common saver servers. Servers with the LXa_SCENE
+ * output class will be passed a scene object for vertification and saving. It's also
+ * possible to save subsets of scenes which contain only specific items. Savers that
+ * support this are marked with this server tag. The value of the tag is a string
+ * composed from space-delimited tokens:
+ * - ALL
+ * The saver supports essentially everything, overrides other settings.
+ * - SURFACES
+ * The saver will save surface-type items, like meshes, static meshes, or procedural
+ * surfaces.
+ * 
+ * - MATERIALS
+ * The saver will also save materials for those surfaces.
+ * 
+ * - RENDER
+ * The saver will save other items related to rendering, like lights and cameras.
+ * 
+ * - ANIMATION
+ * The saver will save animated channels as well as constant values.
+ * 
+ */
+
+        #define LXsSAV_SCENE_SUBSET	"scene.subset"
+
+        #define LXsSUBSET_ALL		"*"
+        #define LXsSUBSET_SURFACES	"surf"
+        #define LXsSUBSET_MATERIALS	"matr"
+        #define LXsSUBSET_RENDER	"rend"
+        #define LXsSUBSET_ANIMATION	"anim"
+
+/*
+ * Servers with this tag may get passed a scene for full scene saving, or they may be
+ * passed a SceneSubset object. This is a very simple object that just contains a
+ * scene and an item collection 
+ */
+
+        #define LXu_SCENESUBSET		"BC46E557-A612-4820-85F8-122D0FF5521C"
+        // [export] ILxSceneSubset scnSub
+        // [local]  ILxSceneSubset
+        // [python] ILxSceneSubset:GetScene		obj Scene
+        // [python] ILxSceneSubset:GetCollection	obj ItemCollection
+
+/*
+ * Legacy scene service for old plug-ins.
+ * Provides old locator methods which are now part of ILxLocator.
+ */
+
+        #define LXa_SCENE2SERVICE	"sceneservice2"
+        #define LXu_SCENE2SERVICE	"3B1E02DD-8ACA-4f30-99C4-F87B626D4FA3"
+        // [const] ILxScene2Service:Root
+        // [const] ILxScene2Service:ItemTypeCount
+        // [const] ILxScene2Service:ItemTypeByIndex
+        // [const] ILxScene2Service:ItemTypeLookup
+        // [const] ILxScene2Service:ItemTypeName
+        // [const] ILxScene2Service:ItemTypeTest
+        // [const] ILxScene2Service:ItemTypeSuper
+        // [const] ILxScene2Service:ItemTypeCommonChannels
+        // [const] ILxScene2Service:ItemSubTypeCount
+        // [const] ILxScene2Service:ItemSubTypeByIndex
+        // [const] ILxScene2Service:ChannelVectorSize
+        // [const] ILxScene2Service:ChannelVectorTextHints
+        // [const] ILxScene2Service:WorldTransform
+        // [const] ILxScene2Service:MeshInstanceCount
+        // [const] ILxScene2Service:MeshInstanceByIndex
+
+/*
+ * Scenes can be queried for items, graphs, and channel values. The object is
+ * polymorphic with [[StringTags (interface)]] for getting and setting scene
+ * tags.
+ */
+
+        #define LXu_SCENE		"FF870F44-FED9-4dbc-95BA-2972A43FC936"
+        #define LXa_SCENE		"scene2"
+        // [local]  ILxScene
+        // [const]  ILxScene:Channels
+        // [const]  ILxScene:SetupChannels
+        // [const]  ILxScene:ItemCount
+        // [const]  ILxScene:ItemByIndex
+        // [const]  ILxScene:ItemLookup
+        // [const]  ILxScene:ItemCountByTypes
+        // [const]  ILxScene:ItemByIndexByTypes
+        // [const]  ILxScene:AnyItemOfType
+        // [const]  ILxScene:GraphLookup
+        // [const]  ILxScene:GraphCount
+        // [const]  ILxScene:GraphByIndex
+        // [const]  ILxScene:RenderCameraCount
+        // [const]  ILxScene:RenderCameraByIndex
+        // [const]  ILxScene:RenderCameraIndex
+        // [python] ILxScene:SubSceneByIndex		obj Scene
+        // [python] ILxScene:Channels			obj ChannelRead (action)
+        // [python] ILxScene:SetupChannels		obj ChannelRead
+        // [python] ILxScene:GraphByIndex		obj SceneGraph
+        // [python] ILxScene:GraphLookup		obj SceneGraph
+        // [python] ILxScene:AnyItemOfType		obj Item
+        // [python] ILxScene:ItemAdd			obj Item
+        // [python] ILxScene:ItemAddReference		obj Item
+        // [python] ILxScene:ItemByIndex		obj Item
+        // [python] ILxScene:RenderCameraByIndex	obj Item
+        // [python] ILxScene:ItemInstance		obj Item
+        // [python] ILxScene:ItemLocalize		obj Item
+        // [python] ILxScene:ItemLookup			obj Item
+        // [python] ILxScene:ItemLookupIdent		obj Item
+        // [python] ILxScene:ItemLookupImported		obj Item
+        // [python] ILxScene:ItemByIndexByTypes		obj Item
+        // [python] ILxScene:ItemReplace		obj Item
+        // [python] ILxScene:Parent			obj Item
+        // [python] ILxScene:SetupMode			bool
+        // [python] ILxScene:ItemCopy			obj Item
+        // [python] ILxScene:AllocAssets		obj SceneAssets
+        // [python] ILxScene:TextureCopy		obj Item
+
+
+        #define LXfSCENENAME_STAR	 1
+        #define LXfSCENENAME_SHORT	 2
+
+/*
+ * Items represent the images, meshes, cameras, lights and so on in the scene.
+ * Items also have an ILxAttributes interface which is a second method for
+ * acessing their channel list.  Values read are the defaults for the channels,
+ * and setting values is disabled.  Items aslo have a [[StringTag (interface)]]
+ * for getting and setting their tags.
+ */
+
+        #define LXa_ITEM		"item"
+        #define LXu_ITEM		"7FF2D6D5-5E28-4650-93ED-89FF257F9629"
+        // [local]  ILxItem
+        // [const]  ILxItem:PackageTest
+        // [const]  ILxItem:ChannelCount
+        // [const]  ILxItem:ChannelLookup
+        // [const]  ILxItem:ChannelName
+        // [const]  ILxItem:ChannelIntHint
+        // [const]  ILxItem:Ident
+        // [python] ILxItem:TestType		bool
+        // [python] ILxItem:TestTypes		bool
+        // [python] ILxItem:IsReferenced	bool
+        // [python] ILxItem:PackageTest		bool
+        // [python] ILxItem:WasLoaded		bool
+        // [python] ILxItem:ChannelIsDriven	bool
+        // [python] ILxItem:Context	obj Scene
+        // [python] ILxItem:Parent	obj Item
+        // [python] ILxItem:Reference	obj Item
+        // [python] ILxItem:Root	obj Item
+        // [python] ILxItem:Source	obj Item
+        // [python] ILxItem:SubByIndex	obj Item
+
+
+        #define LXiCHANTYPE_NONE	 0
+        #define LXiCHANTYPE_INTEGER	 1
+        #define LXiCHANTYPE_FLOAT	 2
+        #define LXiCHANTYPE_GRADIENT	 3
+        #define LXiCHANTYPE_STORAGE	 4
+        #define LXiCHANTYPE_EVAL	 5
+
+
+        #define LXiCHANMODE_SCALAR	 0
+        #define LXiCHANMODE_XY		 1
+        #define LXiCHANMODE_XYZ		 2
+        #define LXiCHANMODE_RGB		 3
+        #define LXiCHANMODE_RGBA	 4
+        #define LXiCHANMODE_UV		 5
+        #define LXiCHANMODE_UVW		 6
+
+
+        #define LXfITEMLOAD_IMPORT	0x01
+        #define LXfITEMLOAD_CURRENT	0x02
+
+/*
+ * Graphs provide a means to create relationships between items and/or channels.
+ * The scene contains any number of graphs accessed by name,
+ */
+
+        #define LXa_SCENEGRAPH		"scenegraph"
+        #define LXu_SCENEGRAPH		"FE07D3C5-C7E4-46af-8F0A-5AB173D48445"
+        // [local]  ILxSceneGraph
+        // [python] ILxSceneGraph:Context	obj Scene
+        // [python] ILxSceneGraph:RootByIndex	obj Item
+        // [python] ILxSceneGraph:RootFirst	obj Item
+        // [python] ILxSceneGraph:RootNext	obj Item
+
+/*
+ * The item graph interface provides item-to-item linking.
+ */
+
+        #define LXa_ITEMGRAPH		"itemgraph"
+        #define LXu_ITEMGRAPH		"C34D7C65-031A-4c9d-8C01-3187D383937B"
+        // [local]  ILxItemGraph
+        // [python] ILxItemGraph:FwdByIndex	obj Item
+        // [python] ILxItemGraph:RevByIndex	obj Item
+
+/*
+ * The channel graph interface provides item/channel-to-item/channel linking.  The
+ * methods are the same as those in the item graph interface above, but take an
+ * item/channel index pair instead of just an item.
+ */
+
+        #define LXa_CHANNELGRAPH	"channelgraph"
+        #define LXu_CHANNELGRAPH	"F70C8AD7-C15F-42e7-98F6-4C4C7F6D577E"
+        // [local]  ILxChannelGraph
+        // [python] ILxChannelGraph:FwdByIndex	obj Item
+        // [python] ILxChannelGraph:RevByIndex	obj Item
+
+/*
+ * The scene assets object provides a way to traverse and update the assets in
+ * a scene.
+ */
+
+        #define LXu_SCENEASSETS		"FB35AE38-4BF6-4B6E-87E0-6A6CB2995B78"
+        // [local]   ILxSceneAssets
+        // [python]  ILxSceneAssets:IsSequence	bool
+        // [python]  ILxSceneAssets:Item	obj Item
+        // [const]   ILxSceneAssets:Item
+        // [const]   ILxSceneAssets:Category
+        // [const]   ILxSceneAssets:GetPath
+
+/*
+ * The instance assets interface is implemented by the package instance, and 
+ * allows the item to present APIs for accessing its assets.
+ */
+
+        #define LXu_INSTANCEASSETS	"C7454DED-84A7-4E5E-8FBE-A98D0EE3C6B4"
+        // [export]  ILxInstanceAssets instAss
+        // [local]   ILxInstanceAssets
+        // [const]   ILxInstanceAssets:IdentByIndex
+        // [const]   ILxInstanceAssets:Category
+        // [const]   ILxInstanceAssets:GetPath
+
+#endif

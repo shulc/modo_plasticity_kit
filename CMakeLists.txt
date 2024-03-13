@@ -9,72 +9,10 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 
-set(libs
-	thread
+add_subdirectory(third_party)
 
-    # primary deps
-	assert
-    atomic
-    bind
-    chrono
-    concept_check
-    config
-    container
-    container_hash
-    core
-    date_time
-    exception
-    function
-    io
-    move
-    optional
-    predef
-    preprocessor
-    smart_ptr
-    static_assert
-    system
-    throw_exception
-    tuple
-    type_traits
-    utility
-    winapi
-    
-    # secondary deps
-    align
-    integer
-    ratio
-    typeof
-    mpl
-    intrusive
-    describe
-    mp11
-    algorithm
-    lexical_cast
-    numeric/conversion
-    range
-    tokenizer
-    detail
-    iterator
-    conversion
-    array
-    variant2
-    function_types
-    regex
-    fusion
-    functional
-    unordered
-    random
-    dynamic_bitset
-    asio
+add_library(${PROJECT_NAME} SHARED
+    src/main.cpp
 )
-foreach(lib IN LISTS libs)
-	add_subdirectory(third_party/boost/libs/${lib})
-    include_directories(third_party/boost/libs/${lib}/include)
-endforeach()
-
-add_subdirectory(third_party/websocketpp EXCLUDE_FROM_ALL)
-include_directories(third_party/websocketpp)
-
-add_executable(${PROJECT_NAME} src/main.cpp)
-target_link_libraries(${PROJECT_NAME} boost_random)
+target_link_libraries(${PROJECT_NAME} PRIVATE Websockets lxsdk)
 
