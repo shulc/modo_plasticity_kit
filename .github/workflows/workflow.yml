@@ -1,0 +1,131 @@
+name: Build kit
+
+on:
+ push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-linux:
+    run-on: ubuntu-lastest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=clang++
+        -DCMAKE_C_COMPILER=clang
+        -DCMAKE_BUILD_TYPE=Release
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+    - name: Creating out
+      run: | 
+        mkdir -p out/Linux
+        copy ${{ steps.strings.outputs.build-output-dir }}/libplasticity_kit.so out/Linux/plasticity_kit.lx
+    - name: Upload build
+      uses: actions/upload-artifact@master
+      with:
+        name: linux
+        path: out
+
+  build-mac:
+    run-on: ubuntu-lastest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=clang++
+        -DCMAKE_C_COMPILER=clang
+        -DCMAKE_BUILD_TYPE=Release
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+    - name: Creating out
+      run: | 
+        mkdir -p out/Mac
+        copy ${{ steps.strings.outputs.build-output-dir }}/libplasticity_kit.dylib out/Mac/plasticity_kit.lx
+    - name: Upload build
+      uses: actions/upload-artifact@master
+      with:
+        name: mac
+        path: out
+
+  build-win:
+    run-on: windows-lastest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=cl
+        -DCMAKE_C_COMPILER=cl
+        -DCMAKE_BUILD_TYPE=Release
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+    - name: Creating out
+      run: | 
+        mkdir out\Win
+        copy ${{ steps.strings.outputs.build-output-dir }}\plasticity_kit.dll out\Win\plasticity_kit.lx
+    - name: Upload build
+      uses: actions/upload-artifact@master
+      with:
+        name: win
+        path: out
+
+  build-kit:
+    run-on: ubuntu-lastest
+    needs: [build-linux,build-mac,build-win]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Download linux artifact
+      uses: actions/download-artifact@master
+      with:
+        name: linux
+          
+    - name: Download mac artifact
+      uses: actions/download-artifact@master
+      with:
+        name: mac
+        
+    - name: Download win artifact
+      uses: actions/download-artifact@master
+      with:
+        name: win
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          kit_files
+
+    - name: Build kit
+      run: |
+        mkdir Plasticity
+        cp -r kit_files/* Plasticity/
+        cp -r out/* Plasticity/
+        zip -r Plasticity.zip Plasticity
+
+    - name: Upload kit
+      uses: actions/upload-artifact@master
+      with:
+        name: kit
+        path: Plasticity.zip    
