@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-linux:
-    run-on: ubuntu-lastest
+    runs-on: ubuntu-lastest
     steps:
     - uses: actions/checkout@v4
     - name: Set reusable strings
@@ -36,7 +36,7 @@ jobs:
         path: out
 
   build-mac:
-    run-on: ubuntu-lastest
+    runs-on: ubuntu-lastest
     steps:
     - uses: actions/checkout@v4
     - name: Set reusable strings
@@ -64,7 +64,7 @@ jobs:
         path: out
 
   build-win:
-    run-on: windows-lastest
+    runs-on: windows-lastest
     steps:
     - uses: actions/checkout@v4
     - name: Set reusable strings
@@ -92,7 +92,7 @@ jobs:
         path: out
 
   build-kit:
-    run-on: ubuntu-lastest
+    runs-on: ubuntu-lastest
     needs: [build-linux,build-mac,build-win]
     steps:
     - uses: actions/checkout@v1
