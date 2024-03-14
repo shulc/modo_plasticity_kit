@@ -1,7 +1,7 @@
 name: Build kit
 
 on:
- push:
+  push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
