@@ -28,7 +28,7 @@ jobs:
     - name: Creating out
       run: | 
         mkdir -p out/Linux
-        copy ${{ steps.strings.outputs.build-output-dir }}/libplasticity_kit.so out/Linux/plasticity_kit.lx
+        cp ${{ steps.strings.outputs.build-output-dir }}/libplasticity_kit.so out/Linux/plasticity_kit.lx
     - name: Upload build
       uses: actions/upload-artifact@master
       with:
@@ -56,7 +56,7 @@ jobs:
     - name: Creating out
       run: | 
         mkdir -p out/Mac
-        copy ${{ steps.strings.outputs.build-output-dir }}/libplasticity_kit.dylib out/Mac/plasticity_kit.lx
+        cp ${{ steps.strings.outputs.build-output-dir }}/libplasticity_kit.dylib out/Mac/plasticity_kit.lx
     - name: Upload build
       uses: actions/upload-artifact@master
       with:
@@ -84,7 +84,7 @@ jobs:
     - name: Creating out
       run: | 
         mkdir out\Win
-        copy ${{ steps.strings.outputs.build-output-dir }}\plasticity_kit.dll out\Win\plasticity_kit.lx
+        copy ${{ steps.strings.outputs.build-output-dir }}\Release\plasticity_kit.dll out\Win\plasticity_kit.lx
     - name: Upload build
       uses: actions/upload-artifact@master
       with:
