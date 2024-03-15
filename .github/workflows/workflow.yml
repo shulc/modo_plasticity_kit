@@ -104,12 +104,6 @@ jobs:
       with:
         name: win
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          kit_files
-
     - name: Build kit
       run: |
         pwd
