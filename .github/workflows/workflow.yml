@@ -119,13 +119,12 @@ jobs:
 
     - name: Build kit
       run: |
-        mkdir Plasticity
-        cp -r kit_files/* Plasticity/
-        cp -r out/* Plasticity/
-        zip -r Plasticity.zip Plasticity
+        mkdir -p out/Plasticity
+        cp -r kit_files/* out/Plasticity/
+        cp -r Win Mac Linux out/Plasticity/
 
     - name: Upload kit
       uses: actions/upload-artifact@master
       with:
         name: kit
-        path: Plasticity.zip    
+        path: out
