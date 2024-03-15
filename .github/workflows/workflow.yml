@@ -83,7 +83,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-linux,build-mac,build-win]
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          kit_files
+
     - name: Download linux artifact
       uses: actions/download-artifact@master
       with:
