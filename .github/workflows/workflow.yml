@@ -112,12 +112,12 @@ jobs:
         mkdir -p out/Plasticity/Mac
         mkdir -p out/Plasticity/Linux
         cp -r kit_files/* out/Plasticity/
-        cp plasticity_kit.dll out/Plasticity/Win/
-        cp libplasticity_kit.dylib out/Plasticity/Mac/
-        cp libplasticity_kit.so out/Plasticity/Linux/
+        cp plasticity_kit.dll out/Plasticity/Win/plasticity_kit.lx
+        cp libplasticity_kit.dylib out/Plasticity/Mac/plasticity_kit.lx
+        cp libplasticity_kit.so out/Plasticity/Linux/plasticity_kit.lx
 
     - name: Upload kit
       uses: actions/upload-artifact@master
       with:
-        name: kit
+        name: Plasticity
         path: out

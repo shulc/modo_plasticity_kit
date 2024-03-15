@@ -16,6 +16,11 @@ set(Boost_USE_STATIC_RUNTIME ON)
 add_subdirectory(third_party)
 
 add_library(${PROJECT_NAME} SHARED
+    src/plasticity.cpp
+    src/websocket.cpp
+    src/log.cpp
+    src/modo.cpp
+    src/geometry.cpp
     src/main.cpp
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE Websockets lxsdk)
