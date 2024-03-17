@@ -4,6 +4,7 @@
 
 #include <istream>
 #include <ostream>
+#include <sys/_types/_int32_t.h>
 #include <vector>
 #include <mutex>
 
@@ -60,15 +61,18 @@ struct TObject {
     void Dump(std::ostream& output);
 };
 
-struct TMessage {
-    EMessageType Type;
-    std::vector<TObject> Objects;
-};
-
-struct TTransaction {
+class TTransaction {
+public:
     std::string Filename;
     uint32_t Version = 0;
-    std::vector<TMessage> Messages;
+    std::vector<TObject> Add;
+    std::vector<TObject> Update;
+    std::vector<int32_t> Delete;
+
+    TTransaction(std::istream& input);
+
+private:
+    void OnMessage(std::istream& input);
 };
 
 struct TState {

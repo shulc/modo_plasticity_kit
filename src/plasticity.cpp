@@ -3,61 +3,58 @@
 #include "modo.hpp"
 #include <cassert>
 
-namespace {
+void TTransaction::OnMessage(std::istream& input) {
+    uint32_t messageType = 0;
+    input.read((char*)&messageType, sizeof(uint32_t));
+    int32_t numObjects = 0;
+    input.read((char*)&numObjects, sizeof(uint32_t));
 
-    TMessage OnMessageItem(std::istream& input) {
-        TMessage result;
-        uint32_t messageType = 0;
-        input.read((char*)&messageType, sizeof(uint32_t));
-
-        if (messageType == EMessageType::Add) {
-            result.Type = EMessageType::Add;
-            uint32_t numObjects = 0;
-            input.read((char*)&numObjects, sizeof(uint32_t));
-
-            while (numObjects--) {
-                TObject obj;
-                obj.Read(input);
-                result.Objects.emplace_back(std::move(obj));
-            }
+    if (messageType == EMessageType::Delete) {
+        while (numObjects--) {
+            int32_t id = 0;
+            input.read((char*)&id, sizeof(uint32_t));
+            Delete.push_back(id);
         }
+    } else if (messageType == EMessageType::Update || messageType == EMessageType::Add) {
+        std::vector<TObject>& objects = (messageType == EMessageType::Update ? Update : Add);
 
-        return result;
+        while (numObjects--) {
+            TObject obj;
+            obj.Read(input);
+            objects.emplace_back(std::move(obj));
+        }
     }
 
-    TTransaction OnTransaction(std::istream& input, bool updateOnly) {
-        TTransaction result;
-        uint32_t filenameLength = 0;
-        input.read((char*)&filenameLength, sizeof(uint32_t));
-        uint32_t padding = (4 - filenameLength % 4) % 4;
-        while (filenameLength--) {
-            char c = input.get();
-            result.Filename.push_back(c);
-        }
+}
 
-        while (padding--) {
-            input.get();
-        }
-
-        input.read((char*)&result.Version, sizeof(uint32_t));
-
-        uint32_t numMessages = 0;
-        input.read((char*)&numMessages, sizeof(uint32_t));
-
-        while (numMessages--) {
-            uint32_t itemLength = 0;
-            input.read((char*)&itemLength, sizeof(uint32_t));
-
-            std::streampos prevPos = input.tellg();
-            result.Messages.emplace_back(std::move(OnMessageItem(input)));
-            std::streampos pos = input.tellg();
-            assert(pos - prevPos == itemLength);
-        }
-
-        return result;
+TTransaction::TTransaction(std::istream& input) {
+    uint32_t filenameLength = 0;
+    input.read((char*)&filenameLength, sizeof(uint32_t));
+    uint32_t padding = (4 - filenameLength % 4) % 4;
+    while (filenameLength--) {
+        char c = input.get();
+        Filename.push_back(c);
     }
 
-} // anonymous namespace
+    while (padding--) {
+        input.get();
+    }
+
+    input.read((char*)&Version, sizeof(uint32_t));
+
+    uint32_t numMessages = 0;
+    input.read((char*)&numMessages, sizeof(uint32_t));
+
+    while (numMessages--) {
+        uint32_t itemLength = 0;
+        input.read((char*)&itemLength, sizeof(uint32_t));
+
+        std::streampos prevPos = input.tellg();
+        OnMessage(input);
+        std::streampos pos = input.tellg();
+        assert(pos - prevPos == itemLength);
+    }
+}
 
 void TObject::Read(std::istream& input) {
     input.read((char*)&ObjectType, sizeof(uint32_t));
@@ -145,13 +142,19 @@ void TObject::Dump(std::ostream& output) {
 void TState::OnMessage(std::istream& input) {
     uint32_t messageType{};
     input.read((char*)&messageType, sizeof(uint32_t));
-    if (messageType == EMessageType::ListAll || messageType == EMessageType::ListSome || messageType == EMessageType::ListVisible) {
+
+    if (messageType == EMessageType::Transaction) {
+        TTransaction transaction(input);
+
+        // TODO: implement SceneHandler::on_transaction
+    }
+    else if (messageType == EMessageType::ListAll || messageType == EMessageType::ListSome || messageType == EMessageType::ListVisible) {
         uint32_t messageId{};
         uint32_t code{};
         input.read((char*)&messageId, sizeof(uint32_t));
         input.read((char*)&code, sizeof(uint32_t));
 
-        TTransaction transaction = OnTransaction(input, false);
+        TTransaction transaction(input);
 
         {
             std::unique_lock<std::mutex> lock(Mutex);
@@ -161,17 +164,15 @@ void TState::OnMessage(std::istream& input) {
             std::lock_guard stateGuard(MutexObjects);
             Filename = transaction.Filename;
             Objects.clear();
-            for (const auto& message : transaction.Messages) {
-                if (message.Type == EMessageType::Add) {
-                    for (const auto& object : message.Objects) {
-                        if (object.ObjectType == EObjectType::Solid
-                            || object.ObjectType == EObjectType::Sheet
-                            || object.ObjectType == EObjectType::Group) {
-                            Objects.push_back(object);
-                        }
-                    }
+            for (const auto& object : transaction.Add) {
+                if (object.ObjectType == EObjectType::Solid
+                    || object.ObjectType == EObjectType::Sheet
+                    || object.ObjectType == EObjectType::Group) {
+                    Objects.push_back(object);
                 }
             }
+
+            // TODO: implement delete unused items.
         }
 
         {

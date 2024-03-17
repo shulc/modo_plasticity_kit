@@ -1,3 +1,7 @@
 .vs/
 out/
 build/
+
+# under VSCode macOS
+.DS_Store
+.cache
