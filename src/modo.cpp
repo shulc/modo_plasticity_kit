@@ -40,6 +40,24 @@ namespace {
         }
     }
 
+    unsigned int SelectOrCreate(const std::string name, CLxUser_Scene& scene, CLxSceneBuilder& sceneBuilder) {
+        static CLxItemType groupLocatorType(LXsITYPE_GROUPLOCATOR);
+        unsigned count;
+        scene.ItemCount(groupLocatorType, &count);
+        CLxUser_Item item;
+        for (unsigned i = 0; i < count; ++i) {
+            scene.ItemByIndex(groupLocatorType, i, item);
+            const char* curName;
+            if (LXx_OK(item.Name(&curName)) && name == curName) {
+                return sceneBuilder.PushItem(item);
+            }
+        }
+
+        unsigned int id = sceneBuilder.AddItem(LXsITYPE_GROUPLOCATOR);
+        sceneBuilder.SetName(name.c_str());
+        return id;
+    }
+
     void Create(const std::string& filename, const std::vector<TObject>& objects) {
         CLxSceneSelection sceneSelection;
         CLxUser_Scene scene;
@@ -47,9 +65,7 @@ namespace {
 
         CLxSceneBuilder sceneBuilder;
         sceneBuilder.Initialize(scene);
-
-        unsigned int plasticityID = sceneBuilder.AddItem(LXsITYPE_GROUPLOCATOR);
-        sceneBuilder.SetName("Plasticity");
+        unsigned int plasticityID = SelectOrCreate("Plasticity", scene, sceneBuilder);
 
         unsigned int fileID = sceneBuilder.AddItem(LXsITYPE_GROUPLOCATOR);
         sceneBuilder.SetName(filename.c_str());

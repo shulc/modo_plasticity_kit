@@ -25,7 +25,7 @@ namespace {
         return result;
     }
 
-    TTransaction OnTransaction(std::istream& input) {
+    TTransaction OnTransaction(std::istream& input, bool updateOnly) {
         TTransaction result;
         uint32_t filenameLength = 0;
         input.read((char*)&filenameLength, sizeof(uint32_t));
@@ -151,7 +151,7 @@ void TState::OnMessage(std::istream& input) {
         input.read((char*)&messageId, sizeof(uint32_t));
         input.read((char*)&code, sizeof(uint32_t));
 
-        TTransaction transaction = OnTransaction(input);
+        TTransaction transaction = OnTransaction(input, false);
 
         {
             std::unique_lock<std::mutex> lock(Mutex);
@@ -160,6 +160,7 @@ void TState::OnMessage(std::istream& input) {
         {
             std::lock_guard stateGuard(MutexObjects);
             Filename = transaction.Filename;
+            Objects.clear();
             for (const auto& message : transaction.Messages) {
                 if (message.Type == EMessageType::Add) {
                     for (const auto& object : message.Objects) {
